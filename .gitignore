@@ -1,0 +1,11 @@
+# Node/TypeScript
+node_modules/
+dist/
+build/
+
+# Environment Variables (Keep your database passwords safe!)
+.env
+
+# OS Files
+.DS_Store
+Thumbs.db

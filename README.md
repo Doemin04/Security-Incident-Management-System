@@ -31,4 +31,4 @@ The underlying MySQL database enforces strict relational integrity with the foll
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/YOUR_USERNAME/SIMS-Project.git](https://github.com/YOUR_USERNAME/SIMS-Project.git)
+   git clone [https://github.com/Doemin04/Security-Incident-Management-System](https://github.com/Doemin04/Security-Incident-Management-System)

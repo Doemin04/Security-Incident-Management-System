@@ -1,0 +1,35 @@
+{
+  "name": "security-incident-management-system",
+  "version": "1.0.0",
+  "description": "This project is a database-driven, Web-based Information System designed for a Security Operations Center (SOC). It serves as a centralized platform for security analysts to document, track, and manage cybersecurity incidents efficiently.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "init-db": "ts-node src/init-db.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Doemin04/Security-Incident-Management-System.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Doemin04/Security-Incident-Management-System/issues"
+  },
+  "homepage": "https://github.com/Doemin04/Security-Incident-Management-System#readme",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "mysql2": "^3.20.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.0",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
+  }
+}
