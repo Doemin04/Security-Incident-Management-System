@@ -30,7 +30,57 @@ Server starts at: **`http://localhost:3000`**
 http://localhost:3000/api
 ```
 
-CORS is enabled — the backend will accept requests from any origin, so no proxy config is needed.
+---
+
+## CORS Setup — Required Before You Can Connect
+
+The backend uses **strict CORS** (least privilege). It will only accept requests from the exact origin you register in the backend's `.env` file. Every other origin gets blocked by the browser.
+
+**You need to tell the backend developer your frontend's port so they can add it. Or, if you have access to the `.env` file yourself, do this:**
+
+### Step 1 — Find out what port your frontend runs on
+
+| Tool | Default origin |
+|---|---|
+| VS Code Live Server | `http://localhost:5500` |
+| Vite | `http://localhost:5173` |
+| React (Create React App) | `http://localhost:3001` |
+| Plain `index.html` opened as a file | ⚠️ Won't work — must use a dev server |
+
+### Step 2 — Set it in the backend `.env` file
+
+Open the `.env` file in the backend project root and add/update this line:
+
+```env
+FRONTEND_ORIGIN=http://localhost:5500
+```
+
+Replace `5500` with your actual port.
+
+### Step 3 — Restart the backend
+
+```bash
+npm run dev
+```
+
+You should see no CORS warning in the terminal. If you see:
+
+```
+[CORS] WARNING: FRONTEND_ORIGIN is not set in .env — all cross-origin requests will be blocked.
+```
+
+It means the variable is missing — go back to Step 2.
+
+### Step 4 — Verify it works
+
+Open your browser's DevTools → Network tab → make a request to the API. If CORS is misconfigured you will see a red error like:
+
+```
+Access to fetch at 'http://localhost:3000/api/incidents' from origin 'http://localhost:5500'
+has been blocked by CORS policy
+```
+
+Fix: double-check the origin in `.env` matches exactly (including `http://`, no trailing slash).
 
 ---
 

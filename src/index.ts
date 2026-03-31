@@ -11,8 +11,21 @@ dotenv.config();
 const app  = express();
 const PORT = process.env.PORT ?? 3000;
 
-// --- Middleware ---
-app.use(cors());
+// --- CORS (least privilege) ---
+// Only the origin declared in FRONTEND_ORIGIN is whitelisted.
+// All other origins are rejected by the browser.
+const ALLOWED_ORIGIN = process.env.FRONTEND_ORIGIN;
+
+if (!ALLOWED_ORIGIN) {
+  console.warn('[CORS] WARNING: FRONTEND_ORIGIN is not set in .env — all cross-origin requests will be blocked.');
+}
+
+app.use(cors({
+  origin: ALLOWED_ORIGIN ?? false,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type'],
+}));
+
 app.use(express.json());
 
 // --- Routes ---
