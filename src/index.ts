@@ -5,6 +5,8 @@ import incidentRoutes from './routes/incidentRoutes';
 import assetRoutes    from './routes/assetRoutes';
 import iocRoutes      from './routes/iocRoutes';
 import noteRoutes     from './routes/noteRoutes';
+import analystRoutes  from './routes/analystRoutes';
+import junctionRoutes from './routes/junctionRoutes';
 
 dotenv.config();
 
@@ -29,10 +31,12 @@ app.use(cors({
 app.use(express.json());
 
 // --- Routes ---
-app.use('/api/incidents',           incidentRoutes);
-app.use('/api/incidents/:id/notes', noteRoutes);
-app.use('/api/assets',              assetRoutes);
-app.use('/api/iocs',                iocRoutes);
+app.use('/api/incidents',                    incidentRoutes);
+app.use('/api/incidents/:id/notes',          noteRoutes);
+app.use('/api/incidents/:id',                junctionRoutes);
+app.use('/api/assets',                       assetRoutes);
+app.use('/api/iocs',                         iocRoutes);
+app.use('/api/analysts',                     analystRoutes);
 
 // --- 404 fallback ---
 app.use((_req, res) => {

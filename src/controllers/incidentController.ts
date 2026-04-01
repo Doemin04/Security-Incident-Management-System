@@ -146,12 +146,14 @@ export async function updateIncidentStatus(req: Request, res: Response): Promise
   if (Status) {
     fields.push('Status = ?');
     values.push(Status);
-    // Auto-stamp Closed_At and TTR when closing an incident
     if (Status === 'Closed' || Status === 'False Positive') {
+      // Stamp close time and calculate resolution time
       fields.push('Closed_At = NOW()');
-      fields.push(
-        'TTR = TIMESTAMPDIFF(MINUTE, Created_At, NOW())'
-      );
+      fields.push('TTR = TIMESTAMPDIFF(MINUTE, Created_At, NOW())');
+    } else {
+      // Re-opening: clear both fields so they don't show stale data
+      fields.push('Closed_At = NULL');
+      fields.push('TTR = NULL');
     }
   }
 
