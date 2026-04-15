@@ -1,4 +1,5 @@
 import mysql from 'mysql2/promise';
+import { RowDataPacket } from 'mysql2';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -28,6 +29,26 @@ const CREATE_TABLES: string[] = [
     IP_Address   VARCHAR(45)    NOT NULL,
     Source       VARCHAR(255)   NOT NULL,
     PRIMARY KEY (AssetID)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS LogEvent (
+    LogEventID          INT            NOT NULL AUTO_INCREMENT,
+    EventTime           DATETIME       NOT NULL,
+    SourceIP            VARCHAR(45)        NULL,
+    DestinationIP       VARCHAR(45)        NULL,
+    Message             TEXT           NOT NULL,
+    RawLine             TEXT           NOT NULL,
+    SourceSystem        VARCHAR(100)   NOT NULL,
+    SourceAssetID       INT                NULL,
+    DestinationAssetID  INT                NULL,
+    Ingested_At         DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (LogEventID),
+    CONSTRAINT fk_logevent_source_asset
+      FOREIGN KEY (SourceAssetID) REFERENCES Asset(AssetID)
+      ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_logevent_destination_asset
+      FOREIGN KEY (DestinationAssetID) REFERENCES Asset(AssetID)
+      ON DELETE SET NULL ON UPDATE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS Analyst (
@@ -98,7 +119,48 @@ const CREATE_TABLES: string[] = [
       FOREIGN KEY (AnalystID)  REFERENCES Analyst(AnalystID)
       ON DELETE CASCADE ON UPDATE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS Incident_LogEvent_Contains (
+    IncidentID   INT            NOT NULL,
+    LogEventID   INT            NOT NULL,
+    PRIMARY KEY (IncidentID, LogEventID),
+    CONSTRAINT fk_ilec_incident
+      FOREIGN KEY (IncidentID) REFERENCES Incident(IncidentID)
+      ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_ilec_logevent
+      FOREIGN KEY (LogEventID) REFERENCES LogEvent(LogEventID)
+      ON DELETE CASCADE ON UPDATE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ];
+
+interface ExistsRow extends RowDataPacket {
+  exists_flag: number;
+}
+
+async function ensureIndex(
+  connection: mysql.Connection,
+  tableName: string,
+  indexName: string,
+  createSql: string
+): Promise<void> {
+  const [rows] = await connection.query<ExistsRow[]>(
+    `SELECT 1 AS exists_flag
+     FROM information_schema.statistics
+     WHERE table_schema = ?
+       AND table_name = ?
+       AND index_name = ?
+     LIMIT 1`,
+    [DB_NAME, tableName, indexName]
+  );
+
+  if (rows.length > 0) {
+    console.log(`  [OK] ${indexName}`);
+    return;
+  }
+
+  await connection.query(createSql);
+  console.log(`  [OK] ${indexName}`);
+}
 
 async function initDb(): Promise<void> {
   // Connect with no database selected so we can create it if it doesn't exist.
@@ -123,6 +185,34 @@ async function initDb(): Promise<void> {
       await connection.query(sql);
       console.log(`  [OK] ${tableName}`);
     }
+
+    await ensureIndex(
+      connection,
+      'Asset',
+      'idx_asset_ip_address',
+      'CREATE INDEX idx_asset_ip_address ON Asset(IP_Address)'
+    );
+
+    await ensureIndex(
+      connection,
+      'LogEvent',
+      'idx_log_event_time',
+      'CREATE INDEX idx_log_event_time ON LogEvent(EventTime)'
+    );
+
+    await ensureIndex(
+      connection,
+      'LogEvent',
+      'idx_log_event_source_ip',
+      'CREATE INDEX idx_log_event_source_ip ON LogEvent(SourceIP)'
+    );
+
+    await ensureIndex(
+      connection,
+      'LogEvent',
+      'idx_log_event_destination_ip',
+      'CREATE INDEX idx_log_event_destination_ip ON LogEvent(DestinationIP)'
+    );
 
     await connection.query('SET FOREIGN_KEY_CHECKS = 1');
     console.log('\nDatabase initialised successfully.');

@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "ts-node src/index.ts",
     "init-db": "ts-node src/init-db.ts",
+    "parse-logs": "ts-node src/logParser.ts",
+    "seed-mitre": "ts-node src/seedMitreAttack.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

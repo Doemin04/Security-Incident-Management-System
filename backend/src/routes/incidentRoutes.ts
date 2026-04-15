@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   createIncident,
+  deleteIncident,
   getAllIncidents,
   getIncidentById,
   updateIncidentStatus,
@@ -12,5 +13,6 @@ router.post('/',     createIncident);
 router.get('/',      getAllIncidents);
 router.get('/:id',   getIncidentById);
 router.put('/:id',   updateIncidentStatus);
+router.delete('/:id', deleteIncident);
 
 export default router;

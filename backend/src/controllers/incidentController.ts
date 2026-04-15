@@ -176,3 +176,32 @@ export async function updateIncidentStatus(req: Request, res: Response): Promise
     res.status(500).json({ error: 'Failed to update incident.' });
   }
 }
+
+// ------------------------------------------------------------------ //
+// DELETE /api/incidents/:id
+// ------------------------------------------------------------------ //
+export async function deleteIncident(req: Request, res: Response): Promise<void> {
+  const id = Number(req.params['id']);
+
+  if (isNaN(id)) {
+    res.status(400).json({ error: 'Incident ID must be a number.' });
+    return;
+  }
+
+  try {
+    const [result] = await pool.query<ResultSetHeader>(
+      `DELETE FROM Incident WHERE IncidentID = ?`,
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      res.status(404).json({ error: `Incident ${id} not found.` });
+      return;
+    }
+
+    res.status(200).json({ message: `Incident ${id} deleted.` });
+  } catch (err) {
+    console.error('deleteIncident:', err);
+    res.status(500).json({ error: 'Failed to delete incident.' });
+  }
+}
