@@ -1,10 +1,10 @@
-# Frontend Integration Handoff — SIMS Backend
+# Frontend Integration Handoff - SIMS Backend
 
-This document is everything you need to connect the frontend to the backend.
-
----
+This document is the current frontend-facing guide to the backend. It reflects the latest implemented backend features, including the new Phase 5 Threat Actor Correlation endpoint and the Phase 4 backend-only log ingestion work.
 
 ## Starting the Backend
+
+Run from `backend/`:
 
 ```bash
 # 1. Install dependencies (first time only)
@@ -13,320 +13,303 @@ npm install
 # 2. Copy the env template and fill in your MySQL password
 cp .env.example .env
 
-# 3. Create the database and all tables (first time only)
+# 3. Create or update the database schema
 npm run init-db
 
 # 4. Start the API server
 npm run dev
 ```
 
-Server starts at: **`http://localhost:3000`**
-
----
+Server starts at `http://localhost:3000`.
 
 ## Base URL
 
-```
+```text
 http://localhost:3000/api
 ```
 
----
+## CORS Setup
 
-## CORS Setup — Required Before You Can Connect
+The backend uses strict CORS. Only the exact frontend origin listed in `backend/.env` is allowed.
 
-The backend uses **strict CORS** (least privilege). It will only accept requests from the exact origin you register in the backend's `.env` file. Every other origin gets blocked by the browser.
-
-**You need to tell the backend developer your frontend's port so they can add it. Or, if you have access to the `.env` file yourself, do this:**
-
-### Step 1 — Find out what port your frontend runs on
-
-| Tool | Default origin |
-|---|---|
-| VS Code Live Server | `http://localhost:5500` |
-| Vite | `http://localhost:5173` |
-| React (Create React App) | `http://localhost:3001` |
-| Plain `index.html` opened as a file | ⚠️ Won't work — must use a dev server |
-
-### Step 2 — Set it in the backend `.env` file
-
-Open the `.env` file in the backend project root and add/update this line:
+Example:
 
 ```env
-FRONTEND_ORIGIN=http://localhost:5500
+FRONTEND_ORIGIN=http://127.0.0.1:5500
 ```
 
-Replace `5500` with your actual port.
-
-### Step 3 — Restart the backend
-
-```bash
-npm run dev
-```
-
-You should see no CORS warning in the terminal. If you see:
-
-```
-[CORS] WARNING: FRONTEND_ORIGIN is not set in .env — all cross-origin requests will be blocked.
-```
-
-It means the variable is missing — go back to Step 2.
-
-### Step 4 — Verify it works
-
-Open your browser's DevTools → Network tab → make a request to the API. If CORS is misconfigured you will see a red error like:
-
-```
-Access to fetch at 'http://localhost:3000/api/incidents' from origin 'http://localhost:5500'
-has been blocked by CORS policy
-```
-
-Fix: double-check the origin in `.env` matches exactly (including `http://`, no trailing slash).
-
----
+If your frontend runs on a different origin, update the value and restart the backend.
 
 ## Response Format
 
-Every response is JSON.
+All responses are JSON.
 
-**Success:**
+Success shapes:
+
 ```json
-{ "message": "...", "IncidentID": 7 }   // create
-{ ...data object... }                    // single fetch
-[ ...array of objects... ]               // list fetch
+{ "message": "...", "IncidentID": 7 }
 ```
 
-**Error (all failures):**
+```json
+{ "...": "single record fields" }
+```
+
+```json
+[
+  { "...": "record 1" }
+]
+```
+
+Error shape:
+
 ```json
 { "error": "Human-readable reason here." }
 ```
 
-**HTTP status codes used:**
+HTTP status codes used:
 
 | Code | Meaning |
 |---|---|
 | `200` | OK |
 | `201` | Created |
-| `400` | Bad request — missing/invalid field |
-| `404` | Record not found |
+| `400` | Bad request |
+| `404` | Record or route not found |
 | `500` | Server error |
 
----
+## Backend Status Summary
 
-## Incidents — `/api/incidents`
+Implemented now:
+
+- Incident CRUD
+- Asset CRUD
+- IoC CRUD
+- Analyst CRUD
+- Incident notes create/list/delete
+- Incident <-> asset link/unlink/list
+- Incident <-> IoC link/unlink/list
+- Incident <-> analyst assign/unassign/list
+- Phase 5 correlation endpoint: `GET /api/correlation/threats`
+- Phase 4 log import as a backend CLI script, not an HTTP endpoint
+
+Not implemented as frontend/API features yet:
+
+- Browser-triggered log import endpoint
+- Frontend UI for asset CRUD
+- Frontend UI for IoC CRUD
+- Frontend UI for analyst CRUD
+- Frontend UI for linking/unlinking assets, IoCs, and analysts
+- Frontend UI for correlation campaigns
+
+## Incidents - `/api/incidents`
 
 ### Field reference
 
 | Field | Type | Notes |
 |---|---|---|
-| `IncidentID` | number | Auto-assigned, read-only |
+| `IncidentID` | number | Auto-assigned |
 | `Title` | string | Required on create |
 | `Description` | string | Required on create |
 | `Status` | string | `"Open"` `"In Progress"` `"Closed"` `"False Positive"` |
 | `Severity` | string | `"Low"` `"Medium"` `"High"` `"Critical"` |
-| `Created_At` | ISO datetime | Auto-assigned |
-| `Closed_At` | ISO datetime or `null` | Auto-filled when Status → Closed |
-| `TTR` | number or `null` | Minutes to resolve — auto-calculated on close |
-
----
-
-### GET all incidents
-```
-GET /api/incidents
-```
-Returns array ordered newest first.
-
-```js
-const res  = await fetch('http://localhost:3000/api/incidents');
-const data = await res.json(); // array of incident objects
-```
-
----
-
-### GET one incident
-```
-GET /api/incidents/:id
-```
-```js
-const res  = await fetch(`http://localhost:3000/api/incidents/${id}`);
-const data = await res.json();
-```
-
----
-
-### POST — create incident
-```
-POST /api/incidents
-Content-Type: application/json
-```
-**Required:** `Title`, `Description`
-**Optional:** `Status` (default `"Open"`), `Severity` (default `"Medium"`)
-
-```js
-const res = await fetch('http://localhost:3000/api/incidents', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    Title: 'Malware on WS-03',
-    Description: 'Defender flagged a trojan dropper.',
-    Status: 'Open',
-    Severity: 'High'
-  })
-});
-const data = await res.json();
-// { "message": "Incident created.", "IncidentID": 7 }
-```
-
----
-
-### PUT — update incident
-```
-PUT /api/incidents/:id
-Content-Type: application/json
-```
-Send only the fields you want to change. All fields are optional.
-
-```js
-const res = await fetch(`http://localhost:3000/api/incidents/${id}`, {
-  method: 'PUT',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ Status: 'Closed' })
-});
-```
-
-> Setting `Status` to `"Closed"` or `"False Positive"` automatically populates `Closed_At` and calculates `TTR`. You do not need to send those fields.
-
----
-
-## Assets — `/api/assets`
-
-### Field reference
-
-| Field | Type | Notes |
-|---|---|---|
-| `AssetID` | number | Auto-assigned, read-only |
-| `Hostname` | string | Required on create |
-| `IP_Address` | string | Required on create |
-| `Source` | string | Required on create (e.g. `"Proxmox VM"`) |
+| `Created_At` | ISO datetime | Auto-assigned by DB/system |
+| `Closed_At` | ISO datetime or `null` | Auto-filled when closed/false positive |
+| `TTR` | number or `null` | Minutes to resolve |
 
 ### Routes
 
 | Method | URL | Body |
 |---|---|---|
-| `GET` | `/api/assets` | — |
-| `GET` | `/api/assets/:id` | — |
-| `POST` | `/api/assets` | `{ Hostname, IP_Address, Source }` |
-| `PUT` | `/api/assets/:id` | Any subset of fields |
-| `DELETE` | `/api/assets/:id` | — |
+| `GET` | `/incidents` | - |
+| `GET` | `/incidents/:id` | - |
+| `POST` | `/incidents` | `{ Title, Description, Status?, Severity? }` |
+| `PUT` | `/incidents/:id` | Any subset of `Title`, `Description`, `Status`, `Severity` |
+| `DELETE` | `/incidents/:id` | - |
 
-```js
-// Create
-await fetch('http://localhost:3000/api/assets', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ Hostname: 'ws-finance-03', IP_Address: '10.0.2.50', Source: 'Domain DHCP' })
-});
+Notes:
 
-// Delete
-await fetch(`http://localhost:3000/api/assets/${id}`, { method: 'DELETE' });
-```
+- The frontend currently maps display label `Resolved` to backend value `Closed`.
+- Setting `Status` to `Closed` or `False Positive` auto-populates `Closed_At` and `TTR`.
 
----
-
-## Indicators of Compromise (IoCs) — `/api/iocs`
-
-### Field reference
-
-| Field | Type | Notes |
-|---|---|---|
-| `IOCID` | number | Auto-assigned, read-only |
-| `Type` | string | Must be one of: `"IP"` `"Domain"` `"Hash"` `"URL"` `"Email"` |
-| `Value` | string | Required on create |
-
-### Routes
+## Assets - `/api/assets`
 
 | Method | URL | Body |
 |---|---|---|
-| `GET` | `/api/iocs` | — |
-| `GET` | `/api/iocs/:id` | — |
-| `POST` | `/api/iocs` | `{ Type, Value }` |
-| `PUT` | `/api/iocs/:id` | Any subset of fields |
-| `DELETE` | `/api/iocs/:id` | — |
+| `GET` | `/assets` | - |
+| `GET` | `/assets/:id` | - |
+| `POST` | `/assets` | `{ Hostname, IP_Address, Source }` |
+| `PUT` | `/assets/:id` | Any subset of fields |
+| `DELETE` | `/assets/:id` | - |
 
-```js
-// Create
-await fetch('http://localhost:3000/api/iocs', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ Type: 'Domain', Value: 'malicious-c2.net' })
-});
-```
-
----
-
-## Notes — `/api/incidents/:id/notes`
-
-Notes are scoped to a parent incident. Deleting an incident automatically deletes its notes (cascade).
-
-### Field reference
-
-| Field | Type | Notes |
-|---|---|---|
-| `NoteID` | number | Auto-assigned, read-only |
-| `Content` | string | Required on create |
-| `Time` | ISO datetime | Auto-stamped on create |
-
-### Routes
+## IoCs - `/api/iocs`
 
 | Method | URL | Body |
 |---|---|---|
-| `GET` | `/api/incidents/:id/notes` | — |
-| `POST` | `/api/incidents/:id/notes` | `{ Content }` |
-| `DELETE` | `/api/incidents/:id/notes/:noteId` | — |
+| `GET` | `/iocs` | - |
+| `GET` | `/iocs/:id` | - |
+| `POST` | `/iocs` | `{ Type, Value }` |
+| `PUT` | `/iocs/:id` | Any subset of fields |
+| `DELETE` | `/iocs/:id` | - |
 
-```js
-// Add a note to incident 3
-await fetch('http://localhost:3000/api/incidents/3/notes', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ Content: 'Analyst confirmed phishing link is now sinkholed.' })
-});
+Allowed `Type` values:
 
-// Fetch all notes for incident 3
-const res   = await fetch('http://localhost:3000/api/incidents/3/notes');
-const notes = await res.json();
+- `IP`
+- `Domain`
+- `Hash`
+- `URL`
+- `Email`
+
+## Analysts - `/api/analysts`
+
+| Method | URL | Body |
+|---|---|---|
+| `GET` | `/analysts` | - |
+| `GET` | `/analysts/:id` | - |
+| `POST` | `/analysts` | `{ Name, Role, Email }` |
+| `PUT` | `/analysts/:id` | Any subset of fields |
+| `DELETE` | `/analysts/:id` | - |
+
+## Notes - `/api/incidents/:id/notes`
+
+| Method | URL | Body |
+|---|---|---|
+| `GET` | `/incidents/:id/notes` | - |
+| `POST` | `/incidents/:id/notes` | `{ Content }` |
+| `DELETE` | `/incidents/:id/notes/:noteId` | - |
+
+## Incident Relationship Endpoints
+
+### Incident <-> Asset
+
+| Method | URL | Body |
+|---|---|---|
+| `GET` | `/incidents/:id/assets` | - |
+| `POST` | `/incidents/:id/assets/:assetId` | Empty body is fine |
+| `DELETE` | `/incidents/:id/assets/:assetId` | - |
+
+### Incident <-> IoC
+
+| Method | URL | Body |
+|---|---|---|
+| `GET` | `/incidents/:id/iocs` | - |
+| `POST` | `/incidents/:id/iocs/:iocId` | Empty body is fine |
+| `DELETE` | `/incidents/:id/iocs/:iocId` | - |
+
+### Incident <-> Analyst
+
+| Method | URL | Body |
+|---|---|---|
+| `GET` | `/incidents/:id/analysts` | - |
+| `POST` | `/incidents/:id/analysts/:analystId` | Empty body is fine |
+| `DELETE` | `/incidents/:id/analysts/:analystId` | - |
+
+## Threat Actor Correlation - `/api/correlation/threats`
+
+This is the new Phase 5 advanced endpoint.
+
+Purpose:
+
+- Finds IoCs that are linked to more than one distinct incident
+- Groups the shared IoC together with the incident records that contain it
+
+Route:
+
+| Method | URL | Body |
+|---|---|---|
+| `GET` | `/api/correlation/threats` | - |
+
+Example response shape:
+
+```json
+[
+  {
+    "IncidentCount": 2,
+    "IOC": {
+      "IOCID": 12,
+      "Type": "IP",
+      "Value": "185.22.81.14"
+    },
+    "Incidents": [
+      {
+        "IncidentID": 19,
+        "Title": "Phase 5 Correlation Test Incident B",
+        "Description": "Second temporary incident mapped to the same IOC for correlation endpoint validation.",
+        "Status": "In Progress",
+        "Severity": "Critical",
+        "Created_At": "2026-04-15T01:33:43.000Z",
+        "Closed_At": null,
+        "TTR": null
+      },
+      {
+        "IncidentID": 18,
+        "Title": "Phase 5 Correlation Test Incident A",
+        "Description": "Temporary incident created to verify shared IOC threat campaign grouping.",
+        "Status": "Open",
+        "Severity": "High",
+        "Created_At": "2026-04-15T01:33:43.000Z",
+        "Closed_At": null,
+        "TTR": null
+      }
+    ]
+  }
+]
 ```
 
----
+Frontend recommendation:
 
-## Reusable fetch helper (optional)
+- Add a dedicated "Threat Campaigns" view or panel
+- Render campaign cards by shared IoC
+- Show incident count, IoC value/type, and the linked incident records
 
-Drop this in your frontend JS to avoid repeating the base URL and headers:
+## Phase 4 Log Import Status
 
-```js
-const API = 'http://localhost:3000/api';
+Current state:
 
-async function apiFetch(path, options = {}) {
-  const res = await fetch(`${API}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? 'Unknown error');
-  return data;
-}
+- Log import exists as a backend CLI script: `backend/src/logParser.ts`
+- It reads either a local file or a remote file over SSH
+- It writes raw log rows into `LogEvent`
+- It creates linked incidents/assets in MySQL
 
-// Usage examples
-const incidents = await apiFetch('/incidents');
-const newInc    = await apiFetch('/incidents', { method: 'POST', body: { Title: '...', Description: '...' } });
-await apiFetch(`/incidents/${id}`, { method: 'PUT', body: { Status: 'Closed' } });
-```
+What the frontend does not have yet:
 
----
+- No HTTP endpoint to trigger log import from the browser
+- No UI for selecting a log file and submitting an import job
+- No UI for displaying raw `LogEvent` records
 
-## Coming in Future Phases
+For now, treat log import as an operator/backend workflow, not a frontend feature.
 
-These endpoints do not exist yet — do not try to call them:
+## Frontend Work Needed Now
 
-- `GET /api/correlation/threats` — links incidents sharing the same IoC (Phase 5: Correlation Engine)
-- Log ingestion script — Proxmox/pfSense syslog parser (Phase 4)
+Recommended next frontend tasks:
+
+1. Add a correlation page or section that calls `GET /api/correlation/threats`.
+2. Add a delete incident action that calls `DELETE /api/incidents/:id`.
+3. Decide whether to expose asset, IoC, and analyst CRUD in the UI or intentionally keep them backend-only for now.
+4. Add UI controls for linking/unlinking assets, IoCs, and analysts to incidents if those workflows are needed.
+5. Do not build a browser log-import flow yet unless a backend HTTP endpoint is added for it.
+
+## Frontend Testing Checklist
+
+Basic incident flow:
+
+1. Fetch incidents with `GET /api/incidents`
+2. Create one with `POST /api/incidents`
+3. Update status/severity with `PUT /api/incidents/:id`
+4. Delete it with `DELETE /api/incidents/:id`
+
+Detail flow:
+
+1. Select an incident
+2. Fetch notes, assets, IoCs, and analysts for it
+3. Add and delete a note
+
+Correlation flow:
+
+1. Call `GET /api/correlation/threats`
+2. Confirm that the shared IoC `185.22.81.14` returns a grouped threat campaign
+3. Render the linked incidents under that IoC
+
+## Frontend Cautions
+
+- Do not assume the browser can trigger Phase 4 log import yet. It cannot.
+- The current backend already supports more than the prototype frontend uses.
+- If rendering user-generated fields such as incident titles, descriptions, or notes, avoid `innerHTML` where possible to reduce XSS risk.

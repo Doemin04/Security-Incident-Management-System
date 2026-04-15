@@ -9,3 +9,6 @@ build/
 # OS Files
 .DS_Store
 Thumbs.db
+
+# frontend
+frontend/
