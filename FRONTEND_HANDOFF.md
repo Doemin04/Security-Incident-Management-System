@@ -1,6 +1,6 @@
 # Frontend Integration Handoff - SIMS Backend
 
-This document is the current frontend-facing guide to the backend. It reflects the latest implemented backend features, including the new Phase 5 Threat Actor Correlation endpoint and the Phase 4 backend-only log ingestion work.
+This document is the current frontend-facing guide to the backend. It reflects the latest implemented backend and frontend integration work, including the new Threat Actor Correlation endpoint, browser-driven log import, and the analyst log review workflow.
 
 ## Starting the Backend
 
@@ -88,17 +88,22 @@ Implemented now:
 - Incident <-> asset link/unlink/list
 - Incident <-> IoC link/unlink/list
 - Incident <-> analyst assign/unassign/list
-- Phase 5 correlation endpoint: `GET /api/correlation/threats`
-- Phase 4 log import as a backend CLI script, not an HTTP endpoint
+- correlation endpoint: `GET /api/correlation/threats`
+- browser-triggered log import endpoint: `POST /api/log-import`
+- log review endpoint: `GET /api/logs`
+- create incident from log endpoint: `POST /api/logs/:logEventID/create-incident`
+- delete log endpoint: `DELETE /api/logs/:logEventID`
+- frontend log review UI with search and 20-items-per-page pagination
+- frontend asset, IoC, and analyst management UI
 
 Not implemented as frontend/API features yet:
 
-- Browser-triggered log import endpoint
-- Frontend UI for asset CRUD
-- Frontend UI for IoC CRUD
-- Frontend UI for analyst CRUD
-- Frontend UI for linking/unlinking assets, IoCs, and analysts
-- Frontend UI for correlation campaigns
+- Browser-triggered log import endpoint -deprecated
+- Frontend UI for asset CRUD -deprecated
+- Frontend UI for IoC CRUD -deprecated
+- Frontend UI for analyst CRUD -deprecated
+- Frontend UI for linking/unlinking assets, IoCs, and analysts -deprecated
+- Frontend UI for correlation campaigns -deprecated
 
 ## Incidents - `/api/incidents`
 
@@ -283,7 +288,7 @@ Recommended next frontend tasks:
 
 1. Add a correlation page or section that calls `GET /api/correlation/threats`.
 2. Add a delete incident action that calls `DELETE /api/incidents/:id`.
-3. Decide whether to expose asset, IoC, and analyst CRUD in the UI or intentionally keep them backend-only for now.
+3. Open asset, IoC, and analyst CRUD in the UI. (we dont have time to do authentication but it is normally required for these operations)
 4. Add UI controls for linking/unlinking assets, IoCs, and analysts to incidents if those workflows are needed.
 5. Do not build a browser log-import flow yet unless a backend HTTP endpoint is added for it.
 
@@ -310,6 +315,6 @@ Correlation flow:
 
 ## Frontend Cautions
 
-- Do not assume the browser can trigger Phase 4 log import yet. It cannot.
+- Do not assume the browser can trigger log import yet. It cannot. It is back end only as there is no auth. Just do the front end import end point so it is there.
 - The current backend already supports more than the prototype frontend uses.
 - If rendering user-generated fields such as incident titles, descriptions, or notes, avoid `innerHTML` where possible to reduce XSS risk.
