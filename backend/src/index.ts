@@ -8,6 +8,8 @@ import noteRoutes     from './routes/noteRoutes';
 import analystRoutes  from './routes/analystRoutes';
 import junctionRoutes from './routes/junctionRoutes';
 import correlationRoutes from './routes/correlationRoutes';
+import logImportRoutes from './routes/logImportRoutes';
+import logRoutes from './routes/logRoutes';
 
 dotenv.config();
 
@@ -39,6 +41,8 @@ app.use('/api/assets',                       assetRoutes);
 app.use('/api/iocs',                         iocRoutes);
 app.use('/api/analysts',                     analystRoutes);
 app.use('/api/correlation',                  correlationRoutes);
+app.use('/api/log-import',                    logImportRoutes);
+app.use('/api',                              logRoutes);
 
 // --- 404 fallback ---
 app.use((_req, res) => {

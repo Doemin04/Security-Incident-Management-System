@@ -24,13 +24,14 @@ Current backend features:
 - Asset and analyst management, including incident assignment/linking through junction tables
 - Independent IoC registry for storing and reusing indicators across incidents
 - Incident-scoped notes with weak-entity behavior under the parent incident
-- Standalone Phase 4 log ingestion that stores raw log events and creates linked incidents/assets
+- Standalone Phase 4 log ingestion stores raw log events for analyst review; incidents are manually created from logs
+- Log Review UI supports search and shows 20 logs per page for analyst triage
 - Phase 5 threat campaign correlation across incidents that share the same IoC
 - Strict CORS configuration for controlled frontend access
 
 Planned or project-scope features not implemented in the current backend yet:
 
-- Browser-triggered log import endpoint
+- Browser-triggered log import endpoint -deprecated
 
 ## Current Repository Structure
 
@@ -44,6 +45,7 @@ Planned or project-scope features not implemented in the current backend yet:
 |   |-- seed.sql
 |   |-- test-pfsense.log
 |   |-- tsconfig.json
+|   |-- tests/
 |   `-- src/
 |       |-- config/
 |       |   `-- db.ts
@@ -114,6 +116,7 @@ Implemented and present in `backend/src/`:
 - MySQL connection pooling through `backend/src/config/db.ts`
 - Database/table bootstrap through `backend/src/init-db.ts`
 - Standalone log ingestion through `backend/src/logParser.ts`
+- Log review and manual incident creation through the new `GET /api/logs` and `POST /api/logs/:logEventID/create-incident` endpoints
 - Standalone MITRE-style seeding through `backend/src/seedMitreAttack.ts`
 - Threat campaign correlation through `GET /api/correlation/threats`
 - Incident full CRUD
@@ -140,6 +143,11 @@ Planned or not implemented in the current backend code:
 - `logParser.ts` writes directly through the existing MySQL pool rather than going through the Express API.
 
 ## Setup
+
+## Test Helpers
+
+The backend now keeps test helper scripts in `backend/tests/`, and `backend/tests/` is excluded from version control by `.gitignore`.
+
 
 ### Backend
 

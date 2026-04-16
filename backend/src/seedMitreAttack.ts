@@ -67,6 +67,12 @@ const WORDS = ['secure', 'billing', 'auth', 'verify', 'promo', 'account'];
 const ENDINGS = ['.com', '.net', '.org', '.co'];
 const OPEN_STATUSES: Array<'Open' | 'In Progress'> = ['Open', 'In Progress'];
 
+const SHARED_IOCS: IocSeed[] = [
+  { Type: 'IP', Value: '185.22.81.14' },
+  { Type: 'Domain', Value: 'malicious-login.example.com' },
+  { Type: 'Hash', Value: 'e3b0c44298fc1c149afbf4c8996fb924' },
+];
+
 const ANALYSTS: AnalystSeed[] = [
   { Name: 'Farhan Tanvir', Role: 'SOC Analyst', Email: 'farhant@sims.com' },
   { Name: 'Fahiyeen Nasser', Role: 'Incident Responder', Email: 'fahiyeenn@sims.com' },
@@ -151,14 +157,33 @@ function makeAssets(index: number): AssetSeed[] {
   }));
 }
 
-function makeIocs(): IocSeed[] {
-  const iocs: IocSeed[] = [
-    { Type: 'IP', Value: makeIp() },
-    { Type: 'Hash', Value: makeHash() },
-    { Type: 'Domain', Value: makeDomain() },
-  ];
+function makeIocs(index: number): IocSeed[] {
+  const iocs: IocSeed[] = [];
 
-  return iocs.slice(0, rand(1, 3));
+  if (index % 3 === 0) iocs.push(SHARED_IOCS[0]);
+  if (index % 5 === 0) iocs.push(SHARED_IOCS[1]);
+  if (index % 7 === 0) iocs.push(SHARED_IOCS[2]);
+
+  const randomCount = rand(0, 2);
+  for (let i = 0; i < randomCount; i += 1) {
+    iocs.push(pick([
+      { Type: 'IP', Value: makeIp() },
+      { Type: 'Hash', Value: makeHash() },
+      { Type: 'Domain', Value: makeDomain() },
+      { Type: 'URL', Value: `http://${makeDomain()}/login` },
+      { Type: 'Email', Value: `alert+${rand(1, 999)}@${makeDomain()}` },
+    ]));
+  }
+
+  const unique = Array.from(
+    new Map(iocs.map((item) => [`${item.Type}:${item.Value}`, item])).values()
+  );
+
+  if (unique.length === 0) {
+    unique.push({ Type: 'IP', Value: makeIp() });
+  }
+
+  return unique.slice(0, Math.min(unique.length, 3));
 }
 
 function minutesBetween(start: Date, end: Date): number {
@@ -198,7 +223,7 @@ function makeIncident(index: number): IncidentSeed {
     Closed_At: isClosed ? formatDateTime(closed) : null,
     Created_At: createdAt,
     Description: description,
-    IOCs: makeIocs(),
+    IOCs: makeIocs(index),
     Notes: [
       {
         Content: `Triage note: ${analyst.Name} reviewed ${tactic}/${technique} activity and classified it as ${label}.`,

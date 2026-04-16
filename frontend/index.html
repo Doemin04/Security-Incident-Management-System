@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Incident Management System</title>
+  <link rel="stylesheet" href="styles.css?v=4">
+</head>
+<body>
+  <header>
+    <h1>Security Incident Management System</h1>
+  </header>
+
+  <main>
+    <section class="box summary">
+      <div><b id="total-incidents">0</b><span>Total Incidents</span></div>
+      <div><b id="open-incidents">0</b><span>Open Incidents</span></div>
+      <div><b id="high-incidents">0</b><span>High/Critical</span></div>
+    </section>
+
+    <section class="box">
+      <h2>Threat Correlation</h2>
+      <div id="correlation-results">Loading threat correlation...</div>
+    </section>
+
+    <section class="box management-grid">
+      <div>
+        <h2>Asset Management</h2>
+        <form id="asset-form">
+          <input id="asset-hostname" placeholder="Hostname" required>
+          <input id="asset-ip" placeholder="IP Address" required>
+          <input id="asset-source" placeholder="Source" required>
+          <button>Create Asset</button>
+        </form>
+        <div id="asset-list"></div>
+      </div>
+
+      <div>
+        <h2>IOC Management</h2>
+        <form id="ioc-form">
+          <select id="ioc-type">
+            <option>IP</option><option>Domain</option><option>Hash</option><option>URL</option><option>Email</option>
+          </select>
+          <input id="ioc-value" placeholder="IOC value" required>
+          <button>Create IOC</button>
+        </form>
+        <div id="ioc-list"></div>
+      </div>
+
+      <div>
+        <h2>Analyst Management</h2>
+        <form id="analyst-form">
+          <input id="analyst-name" placeholder="Name" required>
+          <input id="analyst-role" placeholder="Role" required>
+          <input id="analyst-email" placeholder="Email" required>
+          <button>Create Analyst</button>
+        </form>
+        <div id="analyst-list"></div>
+      </div>
+    </section>
+
+    <section class="box">
+      <h2>Log Import</h2>
+      <form id="log-import-form">
+        <textarea id="log-text" placeholder="Paste raw log data here" required></textarea>
+        <input id="log-source-system" placeholder="Source system (e.g. pfSense)" required>
+        <input id="log-limit" type="number" min="1" placeholder="Limit lines (optional)">
+        <button>Import Logs</button>
+      </form>
+      <div id="import-result"></div>
+    </section>
+
+    <section class="box">
+      <h2>Log Review</h2>
+      <p class="muted">Review imported logs before creating incidents. Select IPs to extract as assets.</p>
+      <div id="log-review-container">
+        <p class="muted">Loading logs...</p>
+      </div>
+    </section>
+
+    <section class="box" id="log-incident-dialog" style="display: none;">
+      <h2>Create Incident from Log</h2>
+      <form id="log-incident-form">
+        <input id="log-incident-title" placeholder="Incident title" required>
+        <textarea id="log-incident-description" placeholder="Incident description" required></textarea>
+        <select id="log-incident-severity">
+          <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+        </select>
+        <div id="log-incident-ips-display" style="margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 4px;"></div>
+        <button type="submit">Create Incident</button>
+        <button type="button" onclick="closeLogIncidentDialog()">Cancel</button>
+      </form>
+    </section>
+
+      <h2>Add Incident</h2>
+      <form id="incident-form">
+        <input id="title" placeholder="Incident title" required>
+        <textarea id="description" placeholder="Incident description" required></textarea>
+        <select id="severity">
+          <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+        </select>
+        <select id="status">
+          <option>Open</option><option>In Progress</option><option>Closed</option><option>False Positive</option>
+        </select>
+        <button>Add Incident</button>
+      </form>
+    </section>
+
+    <section class="box">
+      <h2>Incident Log</h2>
+      <select id="filter">
+        <option>All</option><option>Open</option><option>In Progress</option><option>Closed</option><option>False Positive</option>
+      </select>
+      <table>
+        <thead>
+          <tr>
+            <th id="sort-IncidentID" onclick="setSort('IncidentID')">IncidentID</th>
+            <th id="sort-Title" onclick="setSort('Title')">Title</th>
+            <th id="sort-Severity" onclick="setSort('Severity')">Severity</th>
+            <th id="sort-Status" onclick="setSort('Status')">Status</th>
+          </tr>
+        </thead>
+        <tbody id="incident-table-body"></tbody>
+      </table>
+    </section>
+
+    <section class="box">
+      <h2>Incident Details</h2>
+      <div id="incident-details">Select an incident to see its details.</div>
+    </section>
+
+    <section class="box">
+      <h2>Update Incident</h2>
+      <form id="update-form">
+        <select id="update-status">
+          <option>Open</option><option>In Progress</option><option>Closed</option><option>False Positive</option>
+        </select>
+        <select id="update-severity">
+          <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+        </select>
+        <button>Update</button>
+      </form>
+    </section>
+
+    <section class="box">
+      <h2>Add a Note</h2>
+      <form id="note-form">
+        <textarea id="note-content" placeholder="Write a note" required></textarea>
+        <button>Add Note</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="api.js?v=4"></script>
+  <script src="render.js?v=4"></script>
+  <script src="actions.js?v=4"></script>
+  <script src="app.js?v=4"></script>
+</body>
+</html>

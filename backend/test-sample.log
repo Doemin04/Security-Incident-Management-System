@@ -1,0 +1,10 @@
+Apr 16 10:15:32 webserver httpd[5623]: 198.51.100.45 - - [16/Apr/2026:10:15:32 +0000] "GET /index.html HTTP/1.1" 200 1234 "-" "Mozilla/5.0"
+Apr 16 10:16:45 webserver httpd[5624]: 203.0.113.88 - admin [16/Apr/2026:10:16:45 +0000] "POST /api/login HTTP/1.1" 401 456 "-" "curl/7.68.0"
+Apr 16 10:17:12 mailserver postfix[1234]: E4A5B6C: to=<user@example.com>, relay=mail.example.com[203.0.113.50]:25, delay=0.5, delays=0.1/0/0.2/0.2, dsn=2.0.0, status=sent
+Apr 16 10:18:01 database mysql[8765]: [ERROR] Access denied for user 'unknown'@'192.0.2.44' (using password: YES)
+Apr 16 10:19:33 router kernel: [12345.123456] SYN_RECV timeout from 203.0.113.67 port 54321 to 10.0.0.1 port 443
+Apr 16 10:20:15 proxy squid[2234]: 1234 54321 192.0.2.55 TCP_MISS/200 4567 GET http://example.com/page HTTP/1.1 user HIER_DIRECT/203.0.113.100 text/html
+Apr 16 10:21:48 firewall kernel: [23456.234567] IN=eth1 OUT=eth0 SRC=192.0.2.100 DST=10.0.0.5 PROTO=TCP SPT=49152 DPT=22 WINDOW=65535 SYN URGP=0
+Apr 16 10:22:30 auth sshd[3456]: Received disconnect from 203.0.113.12 port 52341:11: Bye Bye [preauth]
+Apr 16 10:23:55 syslog cron[4789]: (root) CMD (run-parts --report /etc/cron.daily)
+Apr 16 10:24:12 webserver httpd[5625]: 192.0.2.200 - - [16/Apr/2026:10:24:12 +0000] "GET /admin/config.xml HTTP/1.1" 403 512 "-" "Mozilla/5.0"

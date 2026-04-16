@@ -11,4 +11,6 @@ build/
 Thumbs.db
 
 # frontend
-frontend/
+
+# Test helpers and temporary scripts
+backend/tests/
